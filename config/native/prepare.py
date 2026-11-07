@@ -54,6 +54,10 @@ def configure():
                 'TP_MQTT_USER': 'tp-community-platform', 'TP_MQTT_PASSWORD': secrets.token_hex(32),
                 'TP_PROTOCOL_MQTT_USER': 'tp-community-protocols', 'TP_PROTOCOL_MQTT_PASSWORD': secrets.token_hex(32),
                 'TP_DEPLOYMENT_ID': 'community', 'TP_BROKER_CELL': CELL, 'TP_BROKER_INSTANCE': INSTANCE, 'TP_MQTT_CLIENT_ID': CLIENT,
+                'TP_ACR_REGISTRY': 'crpi-8l7h3z38ikkatd81-vpc.cn-shanghai.personal.cr.aliyuncs.com/peak-aiot',
+                'TP_TAG_FRONTEND': 'v1.3.0', 'TP_TAG_BACKEND': 'v1.3.0', 'TP_TAG_BROKER': 'v1.3.0', 'TP_TAG_ENCORE': 'v1.3.0',
+                'TP_TAG_MODBUS': 'v1.0.6.1', 'TP_TAG_HTTP_ADAPTER': 'v1.1.0', 'TP_TAG_THINGSVIS': 'v1.0.23',
+                'TP_TAG_TIMESCALEDB': '14', 'TP_TAG_REDIS': '6.2.7',
                 'TP_NOTIFICATION_KEYRING_B64': base64.b64encode(json.dumps({'main': base64.b64encode(secrets.token_bytes(32)).decode()}).encode()).decode()}
     with envfile.open('a', encoding='utf-8') as output:
         if text and not text.endswith('\n'): output.write('\n')

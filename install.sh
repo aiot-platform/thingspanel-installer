@@ -7,7 +7,7 @@
 # It downloads the real Bash installer and executes it with bash.
 set -eu
 
-RAW_BASE=${RAW_BASE:-https://install.thingspanel.io}
+RAW_BASE=${RAW_BASE:-https://raw.githubusercontent.com/aiot-platform/thingspanel-installer/master-cdf}
 
 # Use the same published installer as the user-facing entry point.
 URL1="$RAW_BASE/install.bash"

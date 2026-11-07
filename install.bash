@@ -12,7 +12,7 @@ set -eu
 
 # ── 常量 ──────────────────────────────────────────────────────────────────────
 REPO="ThingsPanel/thingspanel-installer"
-RAW_BASE="https://install.thingspanel.io"
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/aiot-platform/thingspanel-installer/master-cdf}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/thingspanel}"
 HTTP_PORT="${HTTP_PORT:-8080}"
 MQTT_PORT="${MQTT_PORT:-1883}"

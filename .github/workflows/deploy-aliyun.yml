@@ -1,0 +1,142 @@
+name: Deploy All-in-One to Aliyun
+
+# 一键把整套 ThingsPanel 栈部署/升级到阿里云服务器。
+# - 首次（/opt/thingspanel 不存在）：完整安装，含数据库迁移与校验。
+# - 之后：拉取新镜像并重建容器。
+# 镜像全部来自阿里云 ACR 个人版；第三方基础镜像会先复制到你的 ACR。
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*.*'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-aliyun
+  cancel-in-progress: false
+
+env:
+  ACR_HOST: crpi-8l7h3z38ikkatd81.cn-shanghai.personal.cr.aliyuncs.com
+  ACR_VPC_HOST: crpi-8l7h3z38ikkatd81-vpc.cn-shanghai.personal.cr.aliyuncs.com
+  ACR_NAMESPACE: peak-aiot
+  INSTALL_DIR: /opt/thingspanel
+
+jobs:
+  # 把 timescaledb / redis 等第三方基础镜像复制到你的 ACR，部署时统一从你的仓库拉取。
+  mirror-base-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_HOST }}
+          username: ${{ secrets.IMAGE_USER }}
+          password: ${{ secrets.IMAGE_PASS }}
+
+      - name: Mirror third-party base images
+        run: |
+          set -euo pipefail
+          target="${ACR_HOST}/${ACR_NAMESPACE}"
+          mirror() { docker pull "$1"; docker tag "$1" "$2"; docker push "$2"; }
+          mirror registry.cn-hangzhou.aliyuncs.com/thingspanel/timescaledb:14 "${target}/timescaledb:14"
+          mirror registry.cn-hangzhou.aliyuncs.com/thingspanel/redis:6.2.7 "${target}/redis:6.2.7"
+
+  deploy:
+    needs: mirror-base-images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_SSH_KEY"
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Ensure server prerequisites
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_deploy -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_USER@$DEPLOY_HOST" '
+              set -e
+              if ! command -v docker >/dev/null 2>&1; then
+                echo "docker not found, installing via get.docker.com ..."
+                curl -fsSL https://get.docker.com | sh
+                systemctl enable --now docker
+              fi
+              docker compose version >/dev/null 2>&1 || { echo "ERROR: docker compose v2 未安装"; exit 1; }
+              command -v python3 >/dev/null 2>&1 || { echo "ERROR: 服务器缺少 python3"; exit 1; }
+              command -v openssl >/dev/null 2>&1 || { echo "ERROR: 服务器缺少 openssl"; exit 1; }
+              mkdir -p /opt/thingspanel/config/native
+            '
+
+      - name: Sync compose and config to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          port="${DEPLOY_PORT:-22}"
+          dest="$DEPLOY_USER@$DEPLOY_HOST"
+          scp -i ~/.ssh/id_deploy -P "$port" docker-compose.yml niginx.conf "$dest:/opt/thingspanel/"
+          scp -i ~/.ssh/id_deploy -P "$port" \
+            config/native/prepare.py config/native/runtime.encore.json config/native/runtime.notification.json \
+            config/native/tick.sh config/native/README.md "$dest:/opt/thingspanel/config/native/"
+
+      - name: Login ACR on server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          ACR_USER: ${{ secrets.IMAGE_USER }}
+          ACR_PASS: ${{ secrets.IMAGE_PASS }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$ACR_PASS" | ssh -i ~/.ssh/id_deploy -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker login '${ACR_VPC_HOST}' -u '${ACR_USER}' --password-stdin"
+
+      - name: Bootstrap or upgrade stack
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_deploy -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" '
+            set -e
+            cd /opt/thingspanel
+            if [ -f .env ]; then echo "[INFO] 已存在部署，执行升级"; else echo "[INFO] 首次安装"; fi
+            python3 config/native/prepare.py --pull
+            python3 config/native/prepare.py --bootstrap --refresh-devices
+            docker compose up -d --wait --wait-timeout 300
+            python3 config/native/prepare.py --verify
+          '
+
+      - name: Show compose status
+        if: always()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" \
+            'cd /opt/thingspanel && docker compose ps' || true

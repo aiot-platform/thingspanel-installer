@@ -8,7 +8,7 @@ set -euo pipefail
 
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="ThingsPanel/thingspanel-installer"
-RAW_BASE="https://install.thingspanel.io"
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/aiot-platform/thingspanel-installer/master-cdf}"
 
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
 BLUE='\033[0;34m'; BOLD='\033[1m'; RESET='\033[0m'

@@ -54,6 +54,16 @@ jobs:
           TP_MQTT_PASSWORD=syntax-check-only
           TP_NATIVE_DB_PASSWORD=syntax-check-only
           TP_NOTIFICATION_KEYRING_B64=syntax-check-only
+          TP_ACR_REGISTRY=registry.example.com/namespace
+          TP_TAG_FRONTEND=v1.3.0
+          TP_TAG_BACKEND=v1.3.0
+          TP_TAG_BROKER=v1.3.0
+          TP_TAG_ENCORE=v1.3.0
+          TP_TAG_MODBUS=v1.0.6.1
+          TP_TAG_HTTP_ADAPTER=v1.1.0
+          TP_TAG_THINGSVIS=v1.0.23
+          TP_TAG_TIMESCALEDB=14
+          TP_TAG_REDIS=6.2.7
           EOF
 
       - name: Validate docker-compose syntax
