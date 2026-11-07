@@ -39,6 +39,8 @@ jobs:
           TP_PROTOCOL_MQTT_PASSWORD=syntax-check-only
           TP_NATIVE_DB_PASSWORD=syntax-check-only
           TP_NOTIFICATION_KEYRING_B64=syntax-check-only
+          TP_NOTIFICATION_SERVICE_TOKEN=syntax-check-only
+          TP_NOTIFICATION_READER_TOKEN=syntax-check-only
           EOF
           python3 config/native/prepare.py
 

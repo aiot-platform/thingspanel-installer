@@ -58,6 +58,7 @@ def configure():
                 'TP_TAG_FRONTEND': 'v1.3.0', 'TP_TAG_BACKEND': 'v1.3.0', 'TP_TAG_BROKER': 'v1.3.0', 'TP_TAG_ENCORE': 'v1.3.0',
                 'TP_TAG_MODBUS': 'v1.0.6.1', 'TP_TAG_HTTP_ADAPTER': 'v1.1.0', 'TP_TAG_THINGSVIS': 'v1.0.23',
                 'TP_TAG_TIMESCALEDB': '14', 'TP_TAG_REDIS': '6.2.7',
+                'TP_NOTIFICATION_SERVICE_TOKEN': secrets.token_urlsafe(48), 'TP_NOTIFICATION_READER_TOKEN': secrets.token_urlsafe(48),
                 'TP_NOTIFICATION_KEYRING_B64': base64.b64encode(json.dumps({'main': base64.b64encode(secrets.token_bytes(32)).decode()}).encode()).decode()}
     with envfile.open('a', encoding='utf-8') as output:
         if text and not text.endswith('\n'): output.write('\n')
