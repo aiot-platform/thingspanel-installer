@@ -130,7 +130,10 @@ def bootstrap():
         try:
             for source, target in [('sql', 'community'), ('encore-api/automation/migrations', 'automation'),
                                    ('encore-api/devicemetadata/migrations', 'device_metadata'),
-                                   ('encore-api/l3-core/notification/migrations', 'notification'), ('pkg/global/global.go', 'global.go')]:
+                                   ('encore-api/l3-core/notification/migrations', 'notification'),
+                                   ('encore-api/fileassets/migrations', 'file_storage'),
+                                   ('encore-api/l3-core/connectorcatalog/migrations', 'connector_runtime'),
+                                   ('encore-api/marketinstall/migrations', 'market_install'), ('pkg/global/global.go', 'global.go')]:
                 command('docker', 'cp', container + ':/go/src/app/' + source, str(stage / target))
         finally:
             command('docker', 'rm', container)
@@ -145,7 +148,7 @@ def bootstrap():
             content = (stage / 'community' / (str(number) + '.sql')).read_text()
             sql('ThingsPanel', "BEGIN; SET LOCAL lock_timeout='30s';\n" + content + "\nUPDATE sys_version SET version_number=" + str(number) + ",version='v1.3.0'; COMMIT;")
         apply_migrations('ThingsPanel', 'broker', sorted((stage / 'community/broker').glob('[0-9]*.sql'), key=lambda p: int(p.name.split('_')[0])))
-        for database in ['device_metadata', 'automation', 'notification']:
+        for database in ['device_metadata', 'automation', 'notification', 'file_storage', 'connector_runtime', 'market_install']:
             if sql('postgres', "SELECT count(*) FROM pg_database WHERE datname='" + database + "'") == '0':
                 sql('postgres', 'CREATE DATABASE "' + database + '"')
             sql(database, 'CREATE EXTENSION IF NOT EXISTS pgcrypto')

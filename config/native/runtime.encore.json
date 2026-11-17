@@ -10,6 +10,10 @@
     "authn",
     "thingmodel",
     "devicemetadata",
+    "fileassets",
+    "connectorcatalog",
+    "marketinstall",
+    "platformconfig",
     "automation"
   ],
   "hosted_gateways": [],
@@ -39,6 +43,27 @@
           "username": "postgres",
           "password": {
             "$env": "DB_NOTIFICATION_PASSWORD"
+          }
+        },
+        "file_storage": {
+          "name": "file_storage",
+          "username": "postgres",
+          "password": {
+            "$env": "DB_FILE_STORAGE_PASSWORD"
+          }
+        },
+        "connector_runtime": {
+          "name": "connector_runtime",
+          "username": "postgres",
+          "password": {
+            "$env": "DB_CONNECTOR_RUNTIME_PASSWORD"
+          }
+        },
+        "market_install": {
+          "name": "market_install",
+          "username": "postgres",
+          "password": {
+            "$env": "DB_MARKET_INSTALL_PASSWORD"
           }
         }
       }
