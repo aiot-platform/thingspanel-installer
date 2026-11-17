@@ -172,6 +172,53 @@ def pull_images():
             time.sleep(3)
 
 
+NGINX_INTERNAL_SERVER = """
+    # Private TLS session endpoint; 8443 is not published to the host.
+    server {
+        listen 8443 ssl;
+        server_name frontend;
+        ssl_certificate /run/config/internal.crt;
+        ssl_certificate_key /run/config/internal.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        access_log off;
+        location /api/v1/notification/ {
+            proxy_pass http://backend:9999;
+            proxy_set_header x-token $http_x_token;
+            proxy_set_header Authorization $http_authorization;
+            proxy_set_header X-Notification-Deployment $http_x_notification_deployment;
+        }
+        location / { return 404; }
+    }
+"""
+
+
+def sync_frontend_nginx():
+    """Rebuild niginx.conf from the deployed frontend image, then add the private TLS server.
+
+    The image owns the public routes, so the deployed file can never drift from it. The 8443
+    endpoint only exists inside this deployment: notification-core posts to it over TLS.
+    """
+    try:
+        image = json.loads(command('docker', 'compose', 'config', '--format', 'json'))['services']['frontend']['image']
+        container = command('docker', 'create', '--entrypoint', '/bin/true', image)
+        try:
+            with tempfile.TemporaryDirectory(prefix='tp-nginx-') as temp:
+                base = Path(temp) / 'nginx.conf'
+                command('docker', 'cp', container + ':/etc/nginx/nginx.conf', str(base))
+                text = base.read_text(encoding='utf-8')
+        finally:
+            command('docker', 'rm', container)
+        if 'listen 8443' not in text:
+            end = text.rstrip().rfind('}')
+            if end < 0:
+                raise RuntimeError('frontend nginx.conf has no closing brace to place the internal TLS server')
+            text = text[:end].rstrip() + '\n' + NGINX_INTERNAL_SERVER + text[end:]
+        (ROOT / 'niginx.conf').write_text(text if text.endswith('\n') else text + '\n', encoding='utf-8')
+        print('niginx.conf rebuilt from the frontend image (' + image + ').')
+    except RuntimeError as error:
+        print('WARNING: keeping the existing niginx.conf; ' + str(error))
+
+
 def apply_migrations(database, component, paths):
     sql(database, 'CREATE TABLE IF NOT EXISTS installer_migrations(component text NOT NULL,version int NOT NULL,checksum text NOT NULL,PRIMARY KEY(component,version))')
     for path in paths:
@@ -227,9 +274,11 @@ if __name__ == '__main__':
     parser.add_argument('--bootstrap', action='store_true')
     parser.add_argument('--verify', action='store_true')
     parser.add_argument('--pull', action='store_true')
+    parser.add_argument('--sync-nginx', action='store_true')
     args = parser.parse_args()
     env = configure()
     if args.pull: pull_images()
+    if args.sync_nginx: sync_frontend_nginx()
     if args.bootstrap: bootstrap()
     if args.refresh_devices: refresh(env)
     if args.verify: verify()

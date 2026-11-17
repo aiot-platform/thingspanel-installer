@@ -125,7 +125,7 @@ jobs:
             set -e
             cd /opt/thingspanel
             if [ -f .env ]; then echo "[INFO] 已存在部署，执行升级"; else echo "[INFO] 首次安装"; fi
-            python3 config/native/prepare.py --pull
+            python3 config/native/prepare.py --pull --sync-nginx
             python3 config/native/prepare.py --bootstrap --refresh-devices
             docker compose up -d --wait --wait-timeout 300
             python3 config/native/prepare.py --verify
