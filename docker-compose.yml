@@ -177,6 +177,7 @@ services:
     - AUTH_TRUST_HOST=true
     - DATABASE_URL=postgresql://postgres:${TP_DATABASE_PASSWORD:-postgresThingsPanel}@postgres:5432/ThingsPanel?schema=thingsvis
     - AUTH_SECRET=your-super-secret-auth-key
+    - THINGSPANEL_API_URL=http://backend:9999
     - SEED_ADMIN_PASSWORD=${TP_THINGSVIS_SEED_ADMIN_PASSWORD:?set in .env}
     depends_on:
       postgres:
