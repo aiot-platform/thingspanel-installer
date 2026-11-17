@@ -60,7 +60,8 @@ def configure():
                 'TP_TAG_TIMESCALEDB': '14', 'TP_TAG_REDIS': '6.2.7',
                 'TP_NOTIFICATION_SERVICE_TOKEN': secrets.token_urlsafe(48), 'TP_NOTIFICATION_READER_TOKEN': secrets.token_urlsafe(48),
                 'TP_NOTIFICATION_KEYRING_B64': base64.b64encode(json.dumps({'main': base64.b64encode(secrets.token_bytes(32)).decode()}).encode()).decode(),
-                'TP_THINGSVIS_SEED_ADMIN_PASSWORD': secrets.token_urlsafe(16)}
+                'TP_THINGSVIS_SEED_ADMIN_PASSWORD': secrets.token_urlsafe(16),
+                'TP_THINGSVIS_AUTH_SECRET': secrets.token_urlsafe(32)}
     with envfile.open('a', encoding='utf-8') as output:
         if text and not text.endswith('\n'): output.write('\n')
         for key, value in defaults.items():
