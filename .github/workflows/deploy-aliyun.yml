@@ -128,6 +128,8 @@ jobs:
             python3 config/native/prepare.py --pull --sync-nginx
             python3 config/native/prepare.py --bootstrap --refresh-devices
             docker compose up -d --wait --wait-timeout 300
+            # niginx.conf 是 bind-mount，内容变化不会触发 compose 重建，这里显式重建 frontend。
+            docker compose up -d --force-recreate frontend
             python3 config/native/prepare.py --verify
           '
 
