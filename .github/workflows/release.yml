@@ -58,6 +58,7 @@ jobs:
           TP_NOTIFICATION_READER_TOKEN=syntax-check-only
           TP_THINGSVIS_SEED_ADMIN_PASSWORD=syntax-check-only
           TP_THINGSVIS_AUTH_SECRET=syntax-check-only
+          TP_METADATA_CREDENTIAL_KEYRING_B64=syntax-check-only
           TP_ACR_REGISTRY=registry.example.com/namespace
           TP_TAG_FRONTEND=v1.3.0
           TP_TAG_BACKEND=v1.3.0
