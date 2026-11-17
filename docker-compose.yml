@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-vue:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-vue:${TP_TAG_FRONTEND}
     ports:
     - ${HTTP_PORT:-8080}:8080
     environment:
@@ -30,7 +30,7 @@ services:
     networks:
     - thingspanel_network
   postgres:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/timescaledb:14
+    image: ${TP_ACR_REGISTRY}/timescaledb:${TP_TAG_TIMESCALEDB}
     volumes:
     - postgres_data:/var/lib/postgresql/data
     ports:
@@ -54,7 +54,7 @@ services:
     networks:
     - thingspanel_network
   redis:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/redis:6.2.7
+    image: ${TP_ACR_REGISTRY}/redis:${TP_TAG_REDIS}
     command: redis-server --requirepass redis
     volumes:
     - redis_data:/data
@@ -76,17 +76,18 @@ services:
     networks:
     - thingspanel_network
   backend:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-go:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-go:${TP_TAG_BACKEND}
     ports:
     - 9999:9999
     environment:
     - TZ=Asia/Shanghai
-    - GOTP_DB_PSQL_HOST=postgres
-    - GOTP_DB_PSQL_PORT=5432
-    - GOTP_DB_PSQL_USERNAME=postgres
-    - GOTP_DB_PSQL_PASSWORD=${TP_DATABASE_PASSWORD:-postgresThingsPanel}
-    - GOTP_DB_PSQL_DBNAME=ThingsPanel
-    - GOTP_DB_PSQL_LOG_LEVEL=3
+    - GOTP_RELATIONAL_DRIVER=postgres
+    - GOTP_RELATIONAL_POSTGRES_PLATFORM_HOST=postgres
+    - GOTP_RELATIONAL_POSTGRES_PLATFORM_PORT=5432
+    - GOTP_RELATIONAL_POSTGRES_PLATFORM_USERNAME=postgres
+    - GOTP_RELATIONAL_POSTGRES_PLATFORM_PASSWORD=${TP_DATABASE_PASSWORD:-postgresThingsPanel}
+    - GOTP_RELATIONAL_POSTGRES_PLATFORM_DATABASE=ThingsPanel
+    - GOTP_RELATIONAL_POSTGRES_PLATFORM_LOG_LEVEL=3
     - GOTP_DB_REDIS_ADDR=redis:6379
     - GOTP_DB_REDIS_PASSWORD=redis
     - GOTP_MQTT_SERVER=mosquitto
@@ -128,7 +129,7 @@ services:
       retries: 24
       start_period: 30s
   modbus_service:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/modbus-protocol-plugin:v1.0.6.1
+    image: ${TP_ACR_REGISTRY}/modbus-protocol-plugin:${TP_TAG_MODBUS}
     ports:
     - 502:502
     - 503:503
@@ -146,7 +147,7 @@ services:
     - mosquitto
     restart: unless-stopped
   http_adapter:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-adapter-http:v1.1.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-adapter-http:${TP_TAG_HTTP_ADAPTER}
     ports:
     - 19090:19090
     - 19091:19091
@@ -165,7 +166,7 @@ services:
     - mosquitto
     restart: unless-stopped
   thingsvis-server:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingsvis-server:v1.0.23
+    image: ${TP_ACR_REGISTRY}/thingsvis-server:${TP_TAG_THINGSVIS}
     container_name: thingsvis-server
     restart: unless-stopped
     ports:
@@ -176,6 +177,7 @@ services:
     - AUTH_TRUST_HOST=true
     - DATABASE_URL=postgresql://postgres:${TP_DATABASE_PASSWORD:-postgresThingsPanel}@postgres:5432/ThingsPanel?schema=thingsvis
     - AUTH_SECRET=your-super-secret-auth-key
+    - SEED_ADMIN_PASSWORD=${TP_THINGSVIS_SEED_ADMIN_PASSWORD:?set in .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -190,7 +192,7 @@ services:
       retries: 12
       start_period: 120s
   thingsvis-studio:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingsvis-studio:v1.0.23
+    image: ${TP_ACR_REGISTRY}/thingsvis-studio:${TP_TAG_THINGSVIS}
     container_name: thingsvis-studio
     restart: unless-stopped
     ports:
@@ -213,7 +215,7 @@ services:
       retries: 10
       start_period: 60s
   broker-owner:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-mosquitto:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-mosquitto:${TP_TAG_BROKER}
     command:
     - owner
     restart: unless-stopped
@@ -243,7 +245,7 @@ services:
       timeout: 3s
       retries: 12
   mosquitto:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-mosquitto:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-mosquitto:${TP_TAG_BROKER}
     command:
     - broker
     restart: unless-stopped
@@ -261,7 +263,7 @@ services:
     - ./config/native/plugin-token:/run/secrets/plugin-token:ro
     - ./config/native/services.json:/run/secrets/services.json:ro
   encore-api:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-encore:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-encore:${TP_TAG_ENCORE}
     restart: unless-stopped
     networks:
     - thingspanel_network
@@ -284,7 +286,7 @@ services:
       postgres:
         condition: service_healthy
   notification-core:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-encore:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-encore:${TP_TAG_ENCORE}
     restart: unless-stopped
     networks:
     - thingspanel_network
@@ -304,6 +306,9 @@ services:
       NOTIFICATION_ENCORE_INFRA_CONFIG_PATH: /run/config/runtime.json
       NOTIFICATION_KEYRING_B64: ${TP_NOTIFICATION_KEYRING_B64:?set in .env}
       NOTIFICATION_ACTIVE_KEY_REF: main
+      NOTIFICATION_SERVICE_TOKEN: ${TP_NOTIFICATION_SERVICE_TOKEN:?set in .env}
+      NOTIFICATION_SOURCE_DEPLOYMENT_ID: ${TP_DEPLOYMENT_ID:-community}
+      NOTIFICATION_LEGACY_READER_TOKEN: ${TP_NOTIFICATION_READER_TOKEN:?set in .env}
       NOTIFICATION_LEGACY_BASE_URL: https://frontend:8443
       SSL_CERT_FILE: /run/config/internal-ca.pem
     volumes:
@@ -313,7 +318,7 @@ services:
       postgres:
         condition: service_healthy
   automation-scheduler:
-    image: registry.cn-hangzhou.aliyuncs.com/thingspanel/thingspanel-go:v1.3.0
+    image: ${TP_ACR_REGISTRY}/thingspanel-go:${TP_TAG_BACKEND}
     entrypoint:
     - /bin/sh
     - /run/config/tick.sh
