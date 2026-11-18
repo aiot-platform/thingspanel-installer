@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: ${TP_ACR_REGISTRY}/thingspanel-vue:${TP_TAG_FRONTEND:-v1.2.12.1}
+    image: ${TP_ACR_REGISTRY}/thingspanel-vue:${TP_TAG_FRONTEND:-1.2-release}
     ports:
       - "${TP_HTTP_PORT:-18080}:8080"
     environment:
@@ -39,7 +39,7 @@ services:
       - thingspanel_network
 
   gmqtt:
-    image: ${TP_ACR_REGISTRY}/thingspanel-gmqtt:${TP_TAG_GMQTT:-v1.1.7}
+    image: ${TP_ACR_REGISTRY}/thingspanel-gmqtt:${TP_TAG_GMQTT:-1.2-release}
     volumes:
       - gmqtt:/gmqttd
     ports:
@@ -84,7 +84,7 @@ services:
       - thingspanel_network
 
   backend:
-    image: ${TP_ACR_REGISTRY}/thingspanel-go:${TP_TAG_BACKEND:-v1.2.12.1}
+    image: ${TP_ACR_REGISTRY}/thingspanel-go:${TP_TAG_BACKEND:-1.2-release}
     ports:
       - "${TP_BACKEND_PORT:-19999}:9999"
     environment:
@@ -117,7 +117,7 @@ services:
       - thingspanel_network
 
   modbus_service:
-    image: ${TP_ACR_REGISTRY}/modbus-protocol-plugin:${TP_TAG_MODBUS:-v1.0.6.1}
+    image: ${TP_ACR_REGISTRY}/modbus-protocol-plugin:${TP_TAG_MODBUS:-1.2-release}
     ports:
       - "${TP_MODBUS_PORT:-1502}:502"
       - "${TP_MODBUS_HTTP_PORT:-1503}:503"
@@ -134,7 +134,7 @@ services:
     restart: unless-stopped
 
   http_adapter:
-    image: ${TP_ACR_REGISTRY}/thingspanel-adapter-http:${TP_TAG_HTTP_ADAPTER:-v1.1.0}
+    image: ${TP_ACR_REGISTRY}/thingspanel-adapter-http:${TP_TAG_HTTP_ADAPTER:-1.2-release}
     ports:
       - "${TP_HTTP_ADAPTER_PORT:-29090}:19090"
       - "${TP_HTTP_ADAPTER_HTTP_PORT:-29091}:19091"
@@ -152,7 +152,7 @@ services:
     restart: unless-stopped
 
   thingsvis-server:
-    image: ${TP_ACR_REGISTRY}/thingsvis-server:${TP_TAG_THINGSVIS:-v1.0.23}
+    image: ${TP_ACR_REGISTRY}/thingsvis-server:${TP_TAG_THINGSVIS:-1.2-release}
     container_name: thingsvis-server-1-2
     restart: unless-stopped
     ports:
@@ -176,7 +176,7 @@ services:
       start_period: 120s
 
   thingsvis-studio:
-    image: ${TP_ACR_REGISTRY}/thingsvis-studio:${TP_TAG_THINGSVIS:-v1.0.23}
+    image: ${TP_ACR_REGISTRY}/thingsvis-studio:${TP_TAG_THINGSVIS:-1.2-release}
     container_name: thingsvis-studio-1-2
     restart: unless-stopped
     ports:
